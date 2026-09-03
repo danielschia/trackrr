@@ -16,7 +16,7 @@ class Task(db.Model):
     dashboard = relationship('Dashboard', back_populates='tasks')
     list = relationship('List', back_populates='tasks')
 
-    def __init__(self, title:str, description:str, user_id:int, dashboard_id:int, list_id:int=None):
+    def __init__(self, title:str, description:str, user_id:int, dashboard_id:int, list_id:int):
         self.title = title
         self.description = description
         self.user_id = user_id

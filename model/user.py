@@ -1,5 +1,6 @@
 from database.base import db
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy.orm import relationship
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -8,6 +9,10 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
+
+    dashboards = relationship('Dashboard', back_populates='user')
+    lists = relationship('List', back_populates='user')
+    tasks = relationship('Task', back_populates='user')
 
     def __init__(self, username:str, email:str, password:str):
         self.username = username
