@@ -78,7 +78,7 @@ def login():
         return jsonify({"error": "Username and password are required"}), 400
 
     user = User.query.filter_by(username=username).first()
-    if not user or user.password != password:
+    if not user or not user.check_password(password):
         return jsonify({"error": "Invalid username or password"}), 401
 
     access_token = create_access_token(identity=user.id)
@@ -89,9 +89,11 @@ def logout():
     return "<h1>Logout Page</h1>"
 
 @app.route("/dashboards", methods=['GET'])
+@jwt_required()
 def dashboards():
     return "<h1>Dashboards Page</h1>"
 
 @app.route("/dashboards/<int:dashboard_id>", methods=['GET'])
+@jwt_required()
 def dashboard_detail(dashboard_id):
     return f"<h1>Dashboard Detail Page for Dashboard ID: {dashboard_id}</h1>"
