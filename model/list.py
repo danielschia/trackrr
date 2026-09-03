@@ -1,0 +1,32 @@
+from database.base import db
+from sqlalchemy import Column, Integer, String, Text, ForeignKey
+from sqlalchemy.orm import relationship
+
+class List(db.Model):
+    __tablename__ = 'lists'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    dashboard_id = db.Column(db.Integer, db.ForeignKey('dashboards.id'), nullable=False)
+
+    user = relationship('User', back_populates='lists')
+    dashboard = relationship('Dashboard', back_populates='lists')
+    tasks = relationship('Task', back_populates='list', cascade='all, delete-orphan')
+
+    def __init__(self, name:str, description:str, user_id:int, dashboard_id:int):
+        self.name = name
+        self.description = description
+        self.user_id = user_id
+        self.dashboard_id = dashboard_id
+
+    def to_dict(self) -> dict:
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'user_id': self.user_id,
+            'dashboard_id': self.dashboard_id,
+            'tasks': [task.to_dict() for task in self.tasks]
+        }
