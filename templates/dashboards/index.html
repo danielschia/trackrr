@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container">
+    <ul>
+        {% for dashboard in dashboards %}
+            <li><a href="/dashboards/{{ dashboard.id }} ">{{ dashboard.name }} - {{ dashboard.description }}</a></li>
+        {% endfor %}
+    </ul>
+    {% include "dashboards/dashboard_form.html" %}
+</div>
+
+{% endblock %}

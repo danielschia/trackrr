@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Login</h1>
+<form method="POST" action="{{ url_for('web_auth.login_submit') }}" id="login-form">
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
+    <label for="username">Username:</label>
+    <input type="text" id="username" name="username" required>
+    <label for="password">Password:</label>
+    <input type="password" id="password" name="password" required>
+    <button type="submit">Login</button>
+</form>
+{% endblock %}

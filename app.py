@@ -1,5 +1,5 @@
-from flask import Flask, jsonify, request
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask import Flask, render_template
+from flask_jwt_extended import JWTManager, get_jwt_identity, verify_jwt_in_request
 from database.base import db
 from model.user import User
 from model.dashboard import Dashboard
@@ -17,9 +17,40 @@ app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("SQLALCHEMY_DATABASE_URI")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = os.getenv("SQLALCHEMY_TRACK_MODIFICATIONS")
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
+app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
+app.config["JWT_COOKIE_SECURE"] = False
+app.config["JWT_COOKIE_CSRF_PROTECT"] = False
 
 db.init_app(app)
 jwt = JWTManager(app)
+
+from routes.api.auth import auth_api_bp
+from routes.api.dashboards import dashboards_api_bp
+from routes.web.auth_pages import auth_web_bp
+from routes.web.dashboard_pages import dashboard_web_bp
+from routes.web.list_pages import list_web_bp
+
+app.register_blueprint(auth_api_bp, url_prefix="/api/auth")
+app.register_blueprint(dashboards_api_bp, url_prefix="/api")
+app.register_blueprint(auth_web_bp)
+app.register_blueprint(dashboard_web_bp)
+app.register_blueprint(list_web_bp)
+
+
+@app.context_processor
+def inject_auth_state():
+    try:
+        verify_jwt_in_request(optional=True)
+        is_authenticated = get_jwt_identity() is not None
+    except Exception:
+        is_authenticated = False
+
+    return {"is_authenticated": is_authenticated}
+
+# Ensure tables exist when the app boots in local/dev environments.
+with app.app_context():
+    db.create_all()
+
 @app.cli.command('db_create')
 def db_create():
     db.create_all()
@@ -43,57 +74,4 @@ def db_seed():
 
 @app.route("/")
 def home():
-    return "<h1>Welcome to Trackrr</h1>"
-
-@app.route("/auth/signup", methods=['POST'])
-def signup():
-    data = request.get_json() or {}
-    username = data.get("username")
-    email = data.get("email")
-    password = data.get("password")
-
-    if not username or not email or not password:
-        return jsonify({"error": "Username, email, and password are required"}), 400
-
-    if User.query.filter_by(username=username).first():
-        return jsonify({"error": "Username already exists"}), 400
-
-    if User.query.filter_by(email=email).first():
-        return jsonify({"error": "Email already exists"}), 400
-
-    new_user = User(username=username, email=email, password=password)
-    db.session.add(new_user)
-    db.session.commit()
-
-    access_token = create_access_token(identity=new_user.id)
-    return jsonify({"access_token": access_token}), 201
-
-@app.route("/auth/login", methods=['POST'])
-def login():
-    data = request.get_json() or {}
-    username = data.get("username")
-    password = data.get("password")
-
-    if not username or not password:
-        return jsonify({"error": "Username and password are required"}), 400
-
-    user = User.query.filter_by(username=username).first()
-    if not user or not user.check_password(password):
-        return jsonify({"error": "Invalid username or password"}), 401
-
-    access_token = create_access_token(identity=user.id)
-    return jsonify({"access_token": access_token}), 200
-
-@app.route("/auth/logout")
-def logout():
-    return "<h1>Logout Page</h1>"
-
-@app.route("/dashboards", methods=['GET'])
-@jwt_required()
-def dashboards():
-    return "<h1>Dashboards Page</h1>"
-
-@app.route("/dashboards/<int:dashboard_id>", methods=['GET'])
-@jwt_required()
-def dashboard_detail(dashboard_id):
-    return f"<h1>Dashboard Detail Page for Dashboard ID: {dashboard_id}</h1>"
+    return render_template("base.html")

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Trackr</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    </head>
+    <body>
+        <header>
+            <h1>Trackr</h1>
+            <nav>
+                {% if is_authenticated %}
+                    <a href="{{ url_for('web_dashboard.dashboards_page') }}">Dashboards</a>
+                    <a href="{{ url_for('web_auth.logout') }}">Logout</a>
+                {% else %}
+                    <a href="{{ url_for('web_auth.login_page') }}">Login</a>
+                    <a href="{{ url_for('web_auth.signup_page') }}">Sign Up</a>
+                {% endif %}
+            </nav>
+        </header>
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+        <footer>
+            <p>Star this <a href="https://github.com/danielschia/trackrr" target="_blank">repository</a> on GitHub</p>
+        </footer>
+    </body>
+</html>
