@@ -1,0 +1,9 @@
+<form method="POST" action="{{ url_for('web_task.create_task') }}" id="task-form" data-api-url="{{ url_for('tasks_api.create_task') }}">
+    <input type="hidden" name="dashboard_id" value="{{ dashboard.id }}">
+    <label for="task-title">Task Title:</label>
+    <input type="text" id="task-title" name="title" required>
+    <label for="task-description">Description:</label>
+    <input type="text" id="task-description" name="description">
+    <p id="task-form-error" class="form-error" aria-live="polite"></p>
+    <button type="submit">Create Task</button>
+</form>

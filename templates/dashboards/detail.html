@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="dashboard-board" data-dashboard-id="{{ dashboard.id }}">
+    <header class="dashboard-board__header">
+        <div>
+            <h1>{{ dashboard.name }}</h1>
+            <p>{{ dashboard.description }}</p>
+        </div>
+    </header>
+
+    {% if error %}
+        <p class="form-error">{{ error }}</p>
+    {% endif %}
+
+    <section class="dashboard-board__creator">
+        {% include "lists/list_form.html" %}
+    </section>
+
+    <section class="dashboard-board__columns" id="lists-container">
+        {% for list in dashboard.lists %}
+            <article class="list-column" data-list-id="{{ list.id }}">
+                <h2>{{ list.name }}</h2>
+                {% if list.description %}
+                    <p>{{ list.description }}</p>
+                {% endif %}
+
+                <div class="list-column__tasks">
+                    {% for task in list.tasks %}
+                        <div class="task-card" data-task-id="{{ task.id }}">
+                            <strong>{{ task.title }}</strong>
+                            {% if task.description %}
+                                <p>{{ task.description }}</p>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </article>
+        {% endfor %}
+    </section>
+</section>
+
+<script src="{{ url_for('static', filename='js/dashboards.js') }}"></script>
+<script src="{{ url_for('static', filename='js/tasks.js') }}"></script>
+{% endblock %}

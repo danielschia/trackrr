@@ -1,0 +1,9 @@
+<form method="POST" action="{{ url_for('web_list.create_list') }}" id="list-form" data-api-url="{{ url_for('lists_api.create_list') }}">
+    <input type="hidden" name="dashboard_id" value="{{ dashboard.id }}">
+    <label for="list-name">List Name:</label>
+    <input type="text" id="list-name" name="name" required>
+    <label for="list-description">Description:</label>
+    <input type="text" id="list-description" name="description">
+    <p id="list-form-error" class="form-error" aria-live="polite"></p>
+    <button type="submit">Create List</button>
+</form>

@@ -1,0 +1,9 @@
+<div class="container">
+    <h1>{{ list.name }}</h1>
+    <p>{{ list.description }}</p>
+    <ul>
+        {% for task in list.tasks %}
+            <li>{{ task.title }} - {{ task.description }}</li>
+        {% endfor %}
+    </ul>
+</div>

@@ -11,7 +11,7 @@ class Dashboard(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
     user = relationship('User', back_populates='dashboards')
-    lists = relationship('List', back_populates='dashboard', cascade='all, delete-orphan')
+    lists = relationship('List', back_populates='dashboard', cascade='all, delete-orphan', order_by='List.position' )
     tasks = relationship('Task', back_populates='dashboard', cascade='all, delete-orphan')
 
     def __init__(self, name:str, description:str, user_id:int):

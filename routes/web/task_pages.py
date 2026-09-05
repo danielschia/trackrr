@@ -2,33 +2,37 @@ from flask import Blueprint, redirect, render_template, request, url_for
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from model.dashboard import Dashboard
-from model.list import List
+from model.task import Task
 from database.base import db
 
 
-list_web_bp = Blueprint("web_list", __name__)
+task_web_bp = Blueprint("web_task", __name__)
 
-@list_web_bp.route("/lists", methods=["POST"])
+@task_web_bp.route("/tasks", methods=["POST"])
 @jwt_required()
-def create_list():
+def create_task():
     current_user_id = int(get_jwt_identity())
-    name = request.form.get("name")
+    title = request.form.get("title")
     description = request.form.get("description")
+    list_id = request.form.get("list_id")
     dashboard_id = request.form.get("dashboard_id")
+    position = request.form.get("position")
+    if list_id is not None:
+        list_id = int(list_id)
     if position is not None:
         position = int(position)
     if dashboard_id is not None:
         dashboard_id = int(dashboard_id)
     dashboard = Dashboard.query.filter_by(id=dashboard_id, user_id=current_user_id).first() if dashboard_id else None
 
-    if not name:
+    if not title:
         if dashboard is not None:
-            return render_template("dashboards/detail.html", dashboard=dashboard, error="List name is required"), 400
+            return render_template("dashboards/detail.html", dashboard=dashboard, error="Task title is required"), 400
         return render_template("dashboards/index.html", error="Dashboard not found"), 404
 
-    if not isinstance(name, str):
+    if not isinstance(title, str):
         if dashboard is not None:
-            return render_template("dashboards/detail.html", dashboard=dashboard, error="List name must be a string"), 400
+            return render_template("dashboards/detail.html", dashboard=dashboard, error="Task title must be a string"), 400
         return render_template("dashboards/index.html", error="Dashboard not found"), 404
 
     if description is not None and not isinstance(description, str):
@@ -42,31 +46,31 @@ def create_list():
     if dashboard is None:
         return render_template("dashboards/detail.html", error="Dashboard not found"), 404
 
-    new_list = List(name=name, description=description, user_id=current_user_id, dashboard_id=dashboard.id, position=position)
-    db.session.add(new_list)
+    new_task = Task(title=title, description=description, user_id=current_user_id, dashboard_id=dashboard.id, list_id=0, position=position)
+    db.session.add(new_task)
     db.session.commit()
 
     return redirect(url_for("web_dashboard.dashboard_detail", dashboard_id=dashboard.id))
 
-@list_web_bp.route("/lists/<int:list_id>", methods=["GET"])
+@task_web_bp.route("/tasks/<int:task_id>", methods=["GET"])
 @jwt_required()
-def list_detail(list_id):
+def task_detail(task_id):
     current_user_id = int(get_jwt_identity())
-    list_obj = List.query.filter_by(id=list_id, user_id=current_user_id).first()
-    if list_obj is None or list_obj.user_id != current_user_id:
-        return render_template("dashboards/detail.html", error="List not found"), 404
+    task_obj = Task.query.filter_by(id=task_id, user_id=current_user_id).first()
+    if task_obj is None or task_obj.user_id != current_user_id:
+        return render_template("dashboards/detail.html", error="Task not found"), 404
 
-    return render_template("dashboards/detail.html", list=list_obj), 200
+    return render_template("dashboards/detail.html", task=task_obj), 200
 
-@list_web_bp.route("/lists/<int:list_id>/delete", methods=["POST"])
+@task_web_bp.route("/tasks/<int:task_id>/delete", methods=["POST"])
 @jwt_required()
-def delete_list(list_id):
+def delete_task(task_id):
     current_user_id = int(get_jwt_identity())
-    list_obj = List.query.filter_by(id=list_id, user_id=current_user_id).first()
-    if list_obj is None:
-        return render_template("dashboards/detail.html", error="List not found"), 404
+    task_obj = Task.query.filter_by(id=task_id, user_id=current_user_id).first()
+    if task_obj is None:
+        return render_template("dashboards/detail.html", error="Task not found"), 404
 
-    db.session.delete(list_obj)
+    db.session.delete(task_obj)
     db.session.commit()
 
-    return redirect(url_for("web_dashboard.dashboard_detail", dashboard_id=list_obj.dashboard_id))
+    return redirect(url_for("web_dashboard.dashboard_detail", dashboard_id=task_obj.dashboard_id))
