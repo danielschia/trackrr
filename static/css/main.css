@@ -1,0 +1,54 @@
+body {
+    background-color: #f1f4f9;
+    color: #172b4d;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.dashboard-board__columns {
+    overflow-x: auto;
+    align-items: flex-start;
+}
+
+.list-column {
+    min-width: 310px;
+    max-width: 310px;
+    background: #dfe4ea;
+    border: 0;
+    border-radius: 12px;
+}
+
+.list-column__tasks {
+    min-height: 48px;
+    max-height: 52vh;
+    overflow-y: auto;
+    padding-right: 2px;
+}
+
+.task-card {
+    border-radius: 10px;
+    border: 0;
+    background: #ffffff;
+}
+
+.dashboard-board__creator {
+    max-width: 420px;
+}
+
+.form-error {
+min-height: 1rem;
+}
+
+.card-hover {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+
+.card-hover:hover {
+    transform: translateY(-5px); /* Moves card up slightly */
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15); /* Adds a pronounced shadow */
+}

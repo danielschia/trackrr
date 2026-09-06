@@ -3,6 +3,7 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from database.base import db
 from model.dashboard import Dashboard
+from model.list import List
 from model.task import Task
 
 
@@ -15,7 +16,13 @@ def create_task():
     current_user_id = int(get_jwt_identity())
     data = request.get_json() or {}
     title = (data.get("title") or "").strip()
-    description = data.get("description") or ""
+    description_raw = data.get("description")
+    if description_raw is None:
+        description = ""
+    elif not isinstance(description_raw, str):
+        return jsonify({"error": "Description must be a string"}), 400
+    else:
+        description = description_raw
     dashboard_id = data.get("dashboard_id")
     list_id = data.get("list_id")
 
@@ -24,9 +31,6 @@ def create_task():
 
     if not isinstance(title, str):
         return jsonify({"error": "Task title must be a string"}), 400
-
-    if description is not None and not isinstance(description, str):
-        return jsonify({"error": "Description must be a string"}), 400
 
     if not dashboard_id:
         return jsonify({"error": "Dashboard id is required"}), 400
@@ -38,12 +42,16 @@ def create_task():
     if dashboard is None:
         return jsonify({"error": "Dashboard not found"}), 404
 
+    list_obj = List.query.filter_by(id=list_id, user_id=current_user_id, dashboard_id=dashboard.id).first()
+    if list_obj is None:
+        return jsonify({"error": "List not found"}), 404
+
     new_task = Task(
         title=title,
         description=description,
         user_id=current_user_id,
         dashboard_id=dashboard.id,
-        list_id=0,
+        list_id=list_obj.id,
         position=1000
     )
     db.session.add(new_task)

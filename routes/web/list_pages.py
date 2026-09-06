@@ -1,5 +1,6 @@
 from flask import Blueprint, redirect, render_template, request, url_for
 from flask_jwt_extended import get_jwt_identity, jwt_required
+from sqlalchemy import func
 
 from model.dashboard import Dashboard
 from model.list import List
@@ -12,11 +13,9 @@ list_web_bp = Blueprint("web_list", __name__)
 @jwt_required()
 def create_list():
     current_user_id = int(get_jwt_identity())
-    name = request.form.get("name")
+    name = (request.form.get("name") or "").strip()
     description = request.form.get("description")
     dashboard_id = request.form.get("dashboard_id")
-    if position is not None:
-        position = int(position)
     if dashboard_id is not None:
         dashboard_id = int(dashboard_id)
     dashboard = Dashboard.query.filter_by(id=dashboard_id, user_id=current_user_id).first() if dashboard_id else None
@@ -42,21 +41,20 @@ def create_list():
     if dashboard is None:
         return render_template("dashboards/detail.html", error="Dashboard not found"), 404
 
-    new_list = List(name=name, description=description, user_id=current_user_id, dashboard_id=dashboard.id, position=position)
+    last_position = db.session.query(func.max(List.position)).filter_by(dashboard_id=dashboard.id).scalar()
+    next_position = (last_position or 0) + 1000
+
+    new_list = List(
+        name=name,
+        description=description,
+        user_id=current_user_id,
+        dashboard_id=dashboard.id,
+        position=next_position,
+    )
     db.session.add(new_list)
     db.session.commit()
 
     return redirect(url_for("web_dashboard.dashboard_detail", dashboard_id=dashboard.id))
-
-@list_web_bp.route("/lists/<int:list_id>", methods=["GET"])
-@jwt_required()
-def list_detail(list_id):
-    current_user_id = int(get_jwt_identity())
-    list_obj = List.query.filter_by(id=list_id, user_id=current_user_id).first()
-    if list_obj is None or list_obj.user_id != current_user_id:
-        return render_template("dashboards/detail.html", error="List not found"), 404
-
-    return render_template("dashboards/detail.html", list=list_obj), 200
 
 @list_web_bp.route("/lists/<int:list_id>/delete", methods=["POST"])
 @jwt_required()

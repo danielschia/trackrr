@@ -3,11 +3,18 @@
 {% block content %}
 
 <div class="container">
-    <ul>
+    <div class="row g-3">
         {% for dashboard in dashboards %}
-            <li><a href="/dashboards/{{ dashboard.id }} ">{{ dashboard.name }} - {{ dashboard.description }}</a></li>
+        <div class="col-12 col-md-6 col-lg-4">
+            <a href="{{ url_for('web_dashboard.dashboard_detail', dashboard_id=dashboard.id) }}" class="text-decoration-none text-dark">
+                <div class="card card-hover mb-3 p-3">
+                    <h1 class="h3 mb-1">{{ dashboard.name }}</h1>
+                    <p class="text-muted mb-0">{{ dashboard.description }}</p>
+                </div>
+            </a>
+        </div>
         {% endfor %}
-    </ul>
+    </div>
     {% include "dashboards/dashboard_form.html" %}
 </div>
 

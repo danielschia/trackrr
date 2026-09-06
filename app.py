@@ -1,3 +1,4 @@
+from flask_bootstrap import Bootstrap5
 from flask import Flask, render_template
 from flask_jwt_extended import JWTManager, get_jwt_identity, verify_jwt_in_request
 from database.base import db
@@ -13,6 +14,7 @@ from pathlib import Path
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
 app = Flask(__name__)
+Bootstrap5(app)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("SQLALCHEMY_DATABASE_URI")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = os.getenv("SQLALCHEMY_TRACK_MODIFICATIONS")
@@ -27,6 +29,7 @@ jwt = JWTManager(app)
 from routes.api.auth import auth_api_bp
 from routes.api.dashboards import dashboards_api_bp
 from routes.api.lists import lists_api_bp
+from routes.api.tasks import tasks_api_bp
 from routes.web.auth_pages import auth_web_bp
 from routes.web.dashboard_pages import dashboard_web_bp
 from routes.web.list_pages import list_web_bp
@@ -35,6 +38,7 @@ from routes.web.task_pages import task_web_bp
 app.register_blueprint(auth_api_bp, url_prefix="/api/auth")
 app.register_blueprint(dashboards_api_bp, url_prefix="/api")
 app.register_blueprint(lists_api_bp, url_prefix="/api")
+app.register_blueprint(tasks_api_bp, url_prefix="/api")
 app.register_blueprint(auth_web_bp)
 app.register_blueprint(dashboard_web_bp)
 app.register_blueprint(list_web_bp)
