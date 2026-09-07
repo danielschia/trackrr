@@ -30,9 +30,25 @@ body {
 }
 
 .task-card {
-    border-radius: 10px;
-    border: 0;
-    background: #ffffff;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 10px;
+    margin-top: 10px;
+    cursor: grab;
+}
+
+.task-card__delete-btn{
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.task-card:active {
+    cursor: grabbing;
 }
 
 .dashboard-board__creator {

@@ -79,3 +79,41 @@ def delete_task(task_id):
     db.session.commit()
 
     return redirect(url_for("web_dashboard.dashboard_detail", dashboard_id=task_obj.dashboard_id))
+
+@task_web_bp.route("/tasks/<int:task_id>/edit", methods=["PUT"])
+@jwt_required()
+def edit_task(task_id):
+    current_user_id = int(get_jwt_identity())
+    list_id = request.form.get("list_id")
+    task_obj = Task.query.filter_by(id=task_id, user_id=current_user_id).first()
+    if task_obj is None:
+        return render_template("dashboards/detail.html", error="Task not found"), 404
+
+    title = (request.form.get("title") or "").strip()
+    description = request.form.get("description")
+
+    if not title or title.strip() == "":
+        return render_template("dashboards/detail.html", dashboard=task_obj.dashboard, error="Task title is required"), 400
+
+    if not isinstance(title, str):
+        return render_template("dashboards/detail.html", dashboard=task_obj.dashboard, error="Task title must be a string"), 400
+
+    if description is not None and not isinstance(description, str):
+        return render_template("dashboards/detail.html", dashboard=task_obj.dashboard, error="Description must be a string"), 400
+
+    if description is None:
+        description = ""
+
+    if list_id is not None:
+        list_obj = List.query.filter_by(id=list_id, user_id=current_user_id, dashboard_id=task_obj.dashboard_id).first()
+        if list_obj is None:
+            return render_template("dashboards/detail.html", dashboard=task_obj.dashboard, error="List not found"), 404
+        if list_obj.dashboard_id != task_obj.dashboard_id:
+            return render_template("dashboards/detail.html", dashboard=task_obj.dashboard, error="List does not belong to the same dashboard as the task"), 400
+        task_obj.list_id = list_obj.id
+
+    task_obj.title = title
+    task_obj.description = description
+    db.session.commit()
+
+    return redirect(url_for("web_dashboard.dashboard_detail", dashboard_id=task_obj.dashboard_id))
