@@ -1,4 +1,4 @@
-from flask import Blueprint, redirect, render_template, request, url_for
+from flask import Blueprint, Response, make_response, redirect, render_template, request, url_for
 from flask_jwt_extended import create_access_token, set_access_cookies, unset_jwt_cookies
 
 from database.base import db
@@ -33,7 +33,7 @@ def signup_submit():
     db.session.commit()
 
     access_token = create_access_token(identity=str(new_user.id))
-    response = redirect(url_for("web_dashboard.dashboards_page"))
+    response: Response = make_response(redirect(url_for("web_dashboard.dashboards_page")))
     set_access_cookies(response, access_token)
     return response
 
@@ -56,13 +56,13 @@ def login_submit():
         return render_template("auth/login.html", error="Invalid username or password"), 401
 
     access_token = create_access_token(identity=str(user.id))
-    response = redirect(url_for("web_dashboard.dashboards_page"))
+    response: Response = make_response(redirect(url_for("web_dashboard.dashboards_page")))
     set_access_cookies(response, access_token)
     return response
 
 
 @auth_web_bp.route("/logout")
 def logout():
-    response = redirect(url_for("web_auth.login_page"))
+    response: Response = make_response(redirect(url_for("web_auth.login_page")))
     unset_jwt_cookies(response)
     return response

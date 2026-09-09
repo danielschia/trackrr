@@ -38,13 +38,11 @@ body {
     cursor: grab;
 }
 
-.task-card__delete-btn{
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    background: transparent;
-    border: none;
-    cursor: pointer;
+.list-actions,
+.task-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
 }
 
 .task-card:active {

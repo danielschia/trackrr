@@ -56,6 +56,35 @@ def create_list():
 
     return redirect(url_for("web_dashboard.dashboard_detail", dashboard_id=dashboard.id))
 
+@list_web_bp.route("/lists/<int:list_id>/edit", methods=["POST"])
+@jwt_required()
+def edit_list(list_id):
+    current_user_id = int(get_jwt_identity())
+    list_obj = List.query.filter_by(id=list_id, user_id=current_user_id).first()
+    if list_obj is None:
+        return render_template("dashboards/detail.html", error="List not found"), 404
+
+    name = (request.form.get("name") or "").strip()
+    description = request.form.get("description")
+
+    if not name:
+        return render_template("dashboards/detail.html", dashboard=list_obj.dashboard, error="List name is required"), 400
+
+    if not isinstance(name, str):
+        return render_template("dashboards/detail.html", dashboard=list_obj.dashboard, error="List name must be a string"), 400
+
+    if description is not None and not isinstance(description, str):
+        return render_template("dashboards/detail.html", dashboard=list_obj.dashboard, error="Description must be a string"), 400
+
+    if description is None:
+        description = ""
+
+    list_obj.name = name
+    list_obj.description = description
+    db.session.commit()
+
+    return redirect(url_for("web_dashboard.dashboard_detail", dashboard_id=list_obj.dashboard_id))
+
 @list_web_bp.route("/lists/<int:list_id>/delete", methods=["POST"])
 @jwt_required()
 def delete_list(list_id):

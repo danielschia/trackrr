@@ -10,13 +10,18 @@ from database.base import db
 
 task_web_bp = Blueprint("web_task", __name__)
 
+def reusable_request_data():
+    current_user_id = int(get_jwt_identity())
+    list_id = request.form.get("list_id")
+    return current_user_id, list_id
+
 @task_web_bp.route("/tasks", methods=["POST"])
 @jwt_required()
 def create_task():
-    current_user_id = int(get_jwt_identity())
+    current_user_id, list_id = reusable_request_data()
     title = (request.form.get("title") or "").strip()
     description = request.form.get("description")
-    list_id = request.form.get("list_id")
+
     dashboard_id = request.form.get("dashboard_id")
 
     if list_id is not None:
@@ -83,8 +88,7 @@ def delete_task(task_id):
 @task_web_bp.route("/tasks/<int:task_id>/edit", methods=["PUT"])
 @jwt_required()
 def edit_task(task_id):
-    current_user_id = int(get_jwt_identity())
-    list_id = request.form.get("list_id")
+    current_user_id, list_id = reusable_request_data()
     task_obj = Task.query.filter_by(id=task_id, user_id=current_user_id).first()
     if task_obj is None:
         return render_template("dashboards/detail.html", error="Task not found"), 404
