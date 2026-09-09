@@ -80,7 +80,18 @@ def create_task(body: CreateTaskBody):
 
 @tasks_api_bp.delete("/tasks/<int:task_id>", tags=[tasks_tag], responses={"404": ErrorResponse, "200": None})
 @jwt_required()
-def delete_task(task_id):
+def delete_task(task_id: int | None = None):
+    if task_id is None:
+        task_id = (request.view_args or {}).get("task_id")
+
+    if task_id is None:
+        return jsonify({"error": "Task id is required"}), 400
+
+    try:
+        task_id = int(task_id)
+    except (TypeError, ValueError):
+        return jsonify({"error": "Task id must be an integer"}), 400
+
     current_user_id = int(get_jwt_identity())
     task = Task.query.filter_by(id=task_id, user_id=current_user_id).first()
     if task is None:
@@ -93,7 +104,18 @@ def delete_task(task_id):
 
 @tasks_api_bp.put("/tasks/<int:task_id>", tags=[tasks_tag], responses={"404": ErrorResponse, "200": CreateTaskBody})
 @jwt_required()
-def update_task(task_id):
+def update_task(task_id: int | None = None):
+    if task_id is None:
+        task_id = (request.view_args or {}).get("task_id")
+
+    if task_id is None:
+        return jsonify({"error": "Task id is required"}), 400
+
+    try:
+        task_id = int(task_id)
+    except (TypeError, ValueError):
+        return jsonify({"error": "Task id must be an integer"}), 400
+
     current_user_id, list_id, title, description, position, _dashboard_id = reusable_request_data()
     task = Task.query.filter_by(id=task_id, user_id=current_user_id).first()
     if task is None:

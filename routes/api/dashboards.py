@@ -53,7 +53,7 @@ def create_dashboard():
 
 @dashboards_api_bp.get("/dashboards/<int:dashboard_id>", tags=[Tag(name="Dashboards", description="Operations related to dashboards")], responses={"404": ErrorResponse, "200": CreateDashboardBody})
 @jwt_required()
-def dashboard_detail(dashboard_id):
+def dashboard_detail(dashboard_id: int):
     dashboard = Dashboard.query.filter_by(id=dashboard_id).first()
     if dashboard is None:
         return jsonify({"error": "Dashboard not found"}), 404

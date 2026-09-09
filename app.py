@@ -42,7 +42,7 @@ from routes.web.task_pages import task_web_bp
 app.register_api(auth_api_bp, url_prefix="/api/auth")
 app.register_api(dashboards_api_bp, url_prefix="/api/dashboards")
 app.register_api(lists_api_bp, url_prefix="/api/lists")
-app.register_api(tasks_api_bp, url_prefix="/api/tasks")
+app.register_api(tasks_api_bp, url_prefix="/api")
 app.register_blueprint(auth_web_bp)
 app.register_blueprint(dashboard_web_bp)
 app.register_blueprint(list_web_bp)

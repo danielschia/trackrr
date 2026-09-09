@@ -55,7 +55,7 @@ def create_list(body: CreateListBody):
 
 @lists_api_bp.delete("/lists/<int:list_id>", tags=[Tag(name="Lists", description="Operations related to lists")], responses={"404": ErrorResponse, "200": None})
 @jwt_required()
-def delete_list(list_id):
+def delete_list(list_id: int):
     current_user_id = int(get_jwt_identity())
     list_to_delete = List.query.filter_by(id=list_id, user_id=current_user_id).first()
 
@@ -69,7 +69,7 @@ def delete_list(list_id):
 
 @lists_api_bp.put("/lists/<int:list_id>", tags=[Tag(name="Lists", description="Operations related to lists")], responses={"404": ErrorResponse, "200": CreateListBody})
 @jwt_required()
-def update_list(list_id):
+def update_list(list_id: int):
     current_user_id = int(get_jwt_identity())
     data = request.get_json() or {}
     name = (data.get("name") or "").strip()

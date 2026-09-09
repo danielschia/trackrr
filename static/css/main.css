@@ -45,6 +45,15 @@ body {
     align-items: center;
 }
 
+.list-column__edit-btn,
+.list-column__delete-btn,
+.task-card__edit-btn,
+.task-card__delete-btn {
+    font-size: 0.8rem;
+    padding: 0.2rem 0.45rem;
+    line-height: 1.1;
+}
+
 .task-card:active {
     cursor: grabbing;
 }
