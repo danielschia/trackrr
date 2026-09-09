@@ -1,13 +1,25 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
-
+from flask_openapi3 import APIBlueprint, Tag
+from pydantic import BaseModel, Field
 from database.base import db
 from model.dashboard import Dashboard
 from model.list import List
 from model.task import Task
 
 
-tasks_api_bp = Blueprint("tasks_api", __name__)
+tasks_api_bp = APIBlueprint("tasks_api", __name__)
+tasks_tag = Tag(name="Tasks", description="Operations related to tasks")
+
+class CreateTaskBody(BaseModel):
+    title: str = Field(min_length=1, description="The title of the task")
+    description: str | None = Field(default=None, description="The description of the task")
+    list_id: int = Field(description="The ID of the list to which the task belongs")
+    dashboard_id: int = Field(description="The ID of the dashboard to which the task belongs")
+    position: int | None = Field(default=None, description="The position of the task in the list (optional)")
+
+class ErrorResponse(BaseModel):
+    error: str = Field(description="Error message")
 
 def reusable_request_data():
     current_user_id = int(get_jwt_identity())
@@ -20,9 +32,9 @@ def reusable_request_data():
     return current_user_id, list_id, title, description, position, dashboard_id
 
 
-@tasks_api_bp.route("/tasks", methods=["POST"])
+@tasks_api_bp.post("/tasks", tags=[tasks_tag], responses={"400": ErrorResponse, "201": CreateTaskBody})
 @jwt_required()
-def create_task():
+def create_task(body: CreateTaskBody):
     current_user_id, list_id, title_raw, description_raw, position, dashboard_id = reusable_request_data()
 
     if not isinstance(title_raw, str):
@@ -66,7 +78,7 @@ def create_task():
 
     return jsonify(new_task.to_dict()), 201
 
-@tasks_api_bp.route("/tasks/<int:task_id>", methods=["DELETE"])
+@tasks_api_bp.delete("/tasks/<int:task_id>", tags=[tasks_tag], responses={"404": ErrorResponse, "200": None})
 @jwt_required()
 def delete_task(task_id):
     current_user_id = int(get_jwt_identity())
@@ -79,7 +91,7 @@ def delete_task(task_id):
 
     return jsonify({"message": "Task deleted successfully"}), 200
 
-@tasks_api_bp.route("/tasks/<int:task_id>", methods=["PUT"])
+@tasks_api_bp.put("/tasks/<int:task_id>", tags=[tasks_tag], responses={"404": ErrorResponse, "200": CreateTaskBody})
 @jwt_required()
 def update_task(task_id):
     current_user_id, list_id, title, description, position, _dashboard_id = reusable_request_data()

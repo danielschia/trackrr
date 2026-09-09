@@ -1,14 +1,22 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
-
+from flask_openapi3 import APIBlueprint, Tag
+from pydantic import BaseModel, Field
 from database.base import db
 from model.dashboard import Dashboard
 
 
-dashboards_api_bp = Blueprint("dashboards_api", __name__)
+dashboards_api_bp = APIBlueprint("dashboards_api", __name__)
+
+class CreateDashboardBody(BaseModel):
+    name: str = Field(min_length=1, description="The name of the dashboard")
+    description: str | None = Field(default=None, description="The description of the dashboard")
+
+class ErrorResponse(BaseModel):
+    error: str = Field(description="Error message")
 
 
-@dashboards_api_bp.route("/dashboards", methods=["GET"])
+@dashboards_api_bp.get("/dashboards", tags=[Tag(name="Dashboards", description="Operations related to dashboards")], responses={"200": CreateDashboardBody})
 @jwt_required()
 def list_dashboards():
     current_user_id = int(get_jwt_identity())
@@ -16,7 +24,7 @@ def list_dashboards():
     return jsonify([dashboard.to_dict() for dashboard in dashboards]), 200
 
 
-@dashboards_api_bp.route("/dashboards", methods=["POST"])
+@dashboards_api_bp.post("/dashboards", tags=[Tag(name="Dashboards", description="Operations related to dashboards")], responses={"400": ErrorResponse, "201": CreateDashboardBody})
 @jwt_required()
 def create_dashboard():
     current_user_id = int(get_jwt_identity())
@@ -43,7 +51,7 @@ def create_dashboard():
     return jsonify(new_dashboard.to_dict()), 201
 
 
-@dashboards_api_bp.route("/dashboards/<int:dashboard_id>", methods=["GET"])
+@dashboards_api_bp.get("/dashboards/<int:dashboard_id>", tags=[Tag(name="Dashboards", description="Operations related to dashboards")], responses={"404": ErrorResponse, "200": CreateDashboardBody})
 @jwt_required()
 def dashboard_detail(dashboard_id):
     dashboard = Dashboard.query.filter_by(id=dashboard_id).first()

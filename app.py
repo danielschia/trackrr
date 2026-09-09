@@ -1,5 +1,6 @@
 from flask_bootstrap import Bootstrap5
 from flask import Flask, render_template
+from flask_openapi3 import OpenAPI, Info
 from flask_jwt_extended import JWTManager, get_jwt_identity, verify_jwt_in_request
 from database.base import db
 from model.user import User
@@ -13,7 +14,10 @@ from pathlib import Path
 
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
-app = Flask(__name__)
+info = Info(title="Trackr API",
+    version="1.0.0",
+    description="API for the Trackr application")
+app = OpenAPI(__name__, info=info)
 Bootstrap5(app)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("SQLALCHEMY_DATABASE_URI")
@@ -35,10 +39,10 @@ from routes.web.dashboard_pages import dashboard_web_bp
 from routes.web.list_pages import list_web_bp
 from routes.web.task_pages import task_web_bp
 
-app.register_blueprint(auth_api_bp, url_prefix="/api/auth")
-app.register_blueprint(dashboards_api_bp, url_prefix="/api")
-app.register_blueprint(lists_api_bp, url_prefix="/api")
-app.register_blueprint(tasks_api_bp, url_prefix="/api")
+app.register_api(auth_api_bp, url_prefix="/api/auth")
+app.register_api(dashboards_api_bp, url_prefix="/api/dashboards")
+app.register_api(lists_api_bp, url_prefix="/api/lists")
+app.register_api(tasks_api_bp, url_prefix="/api/tasks")
 app.register_blueprint(auth_web_bp)
 app.register_blueprint(dashboard_web_bp)
 app.register_blueprint(list_web_bp)
