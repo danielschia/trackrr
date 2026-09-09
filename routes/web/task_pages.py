@@ -10,49 +10,70 @@ from database.base import db
 
 task_web_bp = Blueprint("web_task", __name__)
 
+
 def reusable_request_data():
     current_user_id = int(get_jwt_identity())
-    list_id = request.form.get("list_id")
-    return current_user_id, list_id
+    data = request.form or {}
+    list_id = data.get("list_id")
+    title = data.get("title")
+    description = data.get("description")
+    dashboard_id = data.get("dashboard_id")
+    return current_user_id, list_id, title, description, dashboard_id
+
+
+def parse_optional_int(value):
+    if value is None or value == "":
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
 
 @task_web_bp.route("/tasks", methods=["POST"])
 @jwt_required()
 def create_task():
-    current_user_id, list_id = reusable_request_data()
-    title = (request.form.get("title") or "").strip()
-    description = request.form.get("description")
+    current_user_id, list_id_raw, title_raw, description_raw, dashboard_id_raw = reusable_request_data()
+    dashboard_id = parse_optional_int(dashboard_id_raw)
+    list_id = parse_optional_int(list_id_raw)
 
-    dashboard_id = request.form.get("dashboard_id")
+    if dashboard_id is None:
+        return render_template("dashboards/index.html", error="Dashboard id is required"), 400
 
-    if list_id is not None:
-        list_id = int(list_id)
-    if dashboard_id is not None:
-        dashboard_id = int(dashboard_id)
+    if list_id is None:
+        dashboard = Dashboard.query.filter_by(id=dashboard_id, user_id=current_user_id).first()
+        if dashboard is not None:
+            return render_template("dashboards/detail.html", dashboard=dashboard, error="List id is required"), 400
+        return render_template("dashboards/index.html", error="Dashboard not found"), 404
 
-    dashboard = Dashboard.query.filter_by(id=dashboard_id, user_id=current_user_id).first() if dashboard_id else None
+    if not isinstance(title_raw, str):
+        dashboard = Dashboard.query.filter_by(id=dashboard_id, user_id=current_user_id).first()
+        if dashboard is not None:
+            return render_template("dashboards/detail.html", dashboard=dashboard, error="Task title must be a string"), 400
+        return render_template("dashboards/index.html", error="Dashboard not found"), 404
+
+    title = title_raw.strip()
+
+    dashboard = Dashboard.query.filter_by(id=dashboard_id, user_id=current_user_id).first()
 
     if not title:
         if dashboard is not None:
             return render_template("dashboards/detail.html", dashboard=dashboard, error="Task title is required"), 400
         return render_template("dashboards/index.html", error="Dashboard not found"), 404
 
-    if not isinstance(title, str):
-        if dashboard is not None:
-            return render_template("dashboards/detail.html", dashboard=dashboard, error="Task title must be a string"), 400
-        return render_template("dashboards/index.html", error="Dashboard not found"), 404
-
-    if description is not None and not isinstance(description, str):
+    if description_raw is not None and not isinstance(description_raw, str):
         if dashboard is not None:
             return render_template("dashboards/detail.html", dashboard=dashboard, error="Description must be a string"), 400
         return render_template("dashboards/index.html", error="Dashboard not found"), 404
 
-    if description is None:
+    if description_raw is None:
         description = ""
+    else:
+        description = description_raw
 
     if dashboard is None:
         return render_template("dashboards/detail.html", error="Dashboard not found"), 404
 
-    list_obj = List.query.filter_by(id=list_id, user_id=current_user_id, dashboard_id=dashboard.id).first() if list_id else None
+    list_obj = List.query.filter_by(id=list_id, user_id=current_user_id, dashboard_id=dashboard.id).first()
     if list_obj is None:
         return render_template("dashboards/detail.html", dashboard=dashboard, error="List not found"), 404
 
@@ -85,28 +106,32 @@ def delete_task(task_id):
 
     return redirect(url_for("web_dashboard.dashboard_detail", dashboard_id=task_obj.dashboard_id))
 
-@task_web_bp.route("/tasks/<int:task_id>/edit", methods=["PUT"])
+@task_web_bp.route("/tasks/<int:task_id>/edit", methods=["POST"])
 @jwt_required()
 def edit_task(task_id):
-    current_user_id, list_id = reusable_request_data()
+    current_user_id, list_id_raw, title_raw, description_raw, _dashboard_id = reusable_request_data()
     task_obj = Task.query.filter_by(id=task_id, user_id=current_user_id).first()
     if task_obj is None:
         return render_template("dashboards/detail.html", error="Task not found"), 404
 
-    title = (request.form.get("title") or "").strip()
-    description = request.form.get("description")
-
-    if not title or title.strip() == "":
-        return render_template("dashboards/detail.html", dashboard=task_obj.dashboard, error="Task title is required"), 400
-
-    if not isinstance(title, str):
+    if not isinstance(title_raw, str):
         return render_template("dashboards/detail.html", dashboard=task_obj.dashboard, error="Task title must be a string"), 400
+
+    title = title_raw.strip()
+    description = description_raw
+
+    if not title:
+        return render_template("dashboards/detail.html", dashboard=task_obj.dashboard, error="Task title is required"), 400
 
     if description is not None and not isinstance(description, str):
         return render_template("dashboards/detail.html", dashboard=task_obj.dashboard, error="Description must be a string"), 400
 
     if description is None:
         description = ""
+
+    list_id = parse_optional_int(list_id_raw)
+    if list_id_raw not in (None, "") and list_id is None:
+        return render_template("dashboards/detail.html", dashboard=task_obj.dashboard, error="List id must be an integer"), 400
 
     if list_id is not None:
         list_obj = List.query.filter_by(id=list_id, user_id=current_user_id, dashboard_id=task_obj.dashboard_id).first()

@@ -9,6 +9,14 @@ from database.base import db
 dashboard_web_bp = Blueprint("web_dashboard", __name__)
 
 
+def reusable_request_data():
+    current_user_id = int(get_jwt_identity())
+    data = request.form or {}
+    name = data.get("name")
+    description = data.get("description")
+    return current_user_id, name, description
+
+
 @dashboard_web_bp.route("/dashboards-page", methods=["GET"])
 @jwt_required()
 def dashboards_page():
@@ -19,15 +27,16 @@ def dashboards_page():
 @dashboard_web_bp.route("/dashboards", methods=["POST"])
 @jwt_required()
 def create_dashboard():
-    current_user_id = int(get_jwt_identity())
-    name = request.form.get("name")
-    description = request.form.get("description")
+    current_user_id, name_raw, description_raw = reusable_request_data()
+
+    if not isinstance(name_raw, str):
+        return render_template("dashboards/index.html", error="Dashboard name must be a string"), 400
+
+    name = name_raw.strip()
+    description = description_raw
 
     if not name:
         return render_template("dashboards/index.html", error="Dashboard name is required"), 400
-
-    if not isinstance(name, str):
-        return render_template("dashboards/index.html", error="Dashboard name must be a string"), 400
 
     if description is not None and not isinstance(description, str):
         return render_template("dashboards/index.html", error="Description must be a string"), 400
