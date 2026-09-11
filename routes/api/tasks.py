@@ -1,12 +1,13 @@
-from flask import Blueprint, jsonify, request
+from flask import jsonify
 from flask_jwt_extended import get_jwt_identity, jwt_required
-from flask_openapi3 import APIBlueprint, Tag
+from flask_openapi3.blueprint import APIBlueprint
+from flask_openapi3.models.tag import Tag
 from pydantic import BaseModel, Field
+
 from database.base import db
 from model.dashboard import Dashboard
 from model.list import List
 from model.task import Task
-
 
 tasks_api_bp = APIBlueprint("tasks_api", __name__)
 tasks_tag = Tag(name="Tasks", description="Operations related to tasks")
@@ -18,27 +19,30 @@ class CreateTaskBody(BaseModel):
     dashboard_id: int = Field(description="The ID of the dashboard to which the task belongs")
     position: int | None = Field(default=None, description="The position of the task in the list (optional)")
 
+
+class UpdateTaskBody(BaseModel):
+    title: str | None = Field(default=None, min_length=1, description="The title of the task")
+    description: str | None = Field(default=None, description="The description of the task")
+    list_id: int | None = Field(default=None, description="The ID of the list to which the task belongs")
+    position: int | None = Field(default=None, description="The position of the task in the list (optional)")
+
+
+class TaskPath(BaseModel):
+    task_id: int = Field(description="The task ID")
+
 class ErrorResponse(BaseModel):
     error: str = Field(description="Error message")
-
-def reusable_request_data():
-    current_user_id = int(get_jwt_identity())
-    data = request.get_json(silent=True) or {}
-    list_id = data.get("list_id")
-    title = data.get("title")
-    description = data.get("description")
-    position = data.get("position")
-    dashboard_id = data.get("dashboard_id")
-    return current_user_id, list_id, title, description, position, dashboard_id
 
 
 @tasks_api_bp.post("/tasks", tags=[tasks_tag], responses={"400": ErrorResponse, "201": CreateTaskBody})
 @jwt_required()
 def create_task(body: CreateTaskBody):
-    current_user_id, list_id, title_raw, description_raw, position, dashboard_id = reusable_request_data()
-
-    if not isinstance(title_raw, str):
-        return jsonify({"error": "Task title must be a string"}), 400
+    current_user_id = int(get_jwt_identity())
+    title_raw = body.title
+    description_raw = body.description
+    list_id = body.list_id
+    dashboard_id = body.dashboard_id
+    position = body.position
 
     title = title_raw.strip()
     if not title:
@@ -80,17 +84,8 @@ def create_task(body: CreateTaskBody):
 
 @tasks_api_bp.delete("/tasks/<int:task_id>", tags=[tasks_tag], responses={"404": ErrorResponse, "200": None})
 @jwt_required()
-def delete_task(task_id: int | None = None):
-    if task_id is None:
-        task_id = (request.view_args or {}).get("task_id")
-
-    if task_id is None:
-        return jsonify({"error": "Task id is required"}), 400
-
-    try:
-        task_id = int(task_id)
-    except (TypeError, ValueError):
-        return jsonify({"error": "Task id must be an integer"}), 400
+def delete_task(path: TaskPath):
+    task_id = path.task_id
 
     current_user_id = int(get_jwt_identity())
     task = Task.query.filter_by(id=task_id, user_id=current_user_id).first()
@@ -104,19 +99,14 @@ def delete_task(task_id: int | None = None):
 
 @tasks_api_bp.put("/tasks/<int:task_id>", tags=[tasks_tag], responses={"404": ErrorResponse, "200": CreateTaskBody})
 @jwt_required()
-def update_task(task_id: int | None = None):
-    if task_id is None:
-        task_id = (request.view_args or {}).get("task_id")
+def update_task(path: TaskPath, body: UpdateTaskBody):
+    task_id = path.task_id
+    current_user_id = int(get_jwt_identity())
+    list_id = body.list_id
+    title = body.title
+    description = body.description
+    position = body.position
 
-    if task_id is None:
-        return jsonify({"error": "Task id is required"}), 400
-
-    try:
-        task_id = int(task_id)
-    except (TypeError, ValueError):
-        return jsonify({"error": "Task id must be an integer"}), 400
-
-    current_user_id, list_id, title, description, position, _dashboard_id = reusable_request_data()
     task = Task.query.filter_by(id=task_id, user_id=current_user_id).first()
     if task is None:
         return jsonify({"error": "Task not found"}), 404
@@ -130,13 +120,9 @@ def update_task(task_id: int | None = None):
         task.list_id = list_obj.id
 
     if position is not None:
-        if not isinstance(position, int):
-            return jsonify({"error": "Position must be an integer"}), 400
         task.position = position
 
     if title is not None:
-        if not isinstance(title, str):
-            return jsonify({"error": "Task title must be a string"}), 400
         title = title.strip()
         if title == "":
             return jsonify({"error": "Task title is required"}), 400
@@ -144,8 +130,6 @@ def update_task(task_id: int | None = None):
     
 
     if description is not None:
-        if not isinstance(description, str):
-            return jsonify({"error": "Description must be a string"}), 400
         description = description.strip()
         if description == "":
             return jsonify({"error": "Task description cannot be empty"}), 400

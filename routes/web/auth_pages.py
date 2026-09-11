@@ -15,6 +15,8 @@ from flask_jwt_extended import (
 
 from database.base import db
 from model.user import User
+from services.AuthService.build_user import build_new_user
+from services.AuthService.validate_signup import validate_sign_up_input
 
 auth_web_bp = Blueprint("web_auth", __name__)
 
@@ -30,16 +32,12 @@ def signup_submit():
     email = (request.form.get("email") or "").strip()
     password = request.form.get("password") or ""
 
-    if not username or not email or not password:
-        return render_template("auth/signup.html", error="Username, email, and password are required"), 400
+    validation_error = validate_sign_up_input(username, email, password)
+    if validation_error:
+        return validation_error
 
-    if User.query.filter_by(username=username).first():
-        return render_template("auth/signup.html", error="Username already exists"), 400
-
-    if User.query.filter_by(email=email).first():
-        return render_template("auth/signup.html", error="Email already exists"), 400
-
-    new_user = User(username=username, email=email, password=password)
+    new_user = build_new_user(username, email, password)
+    
     db.session.add(new_user)
     db.session.commit()
 

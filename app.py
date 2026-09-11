@@ -2,10 +2,12 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
-from flask import render_template
+from flask import jsonify, make_response, redirect, render_template, request, url_for
 from flask_bootstrap import Bootstrap5
-from flask_jwt_extended import JWTManager, get_jwt_identity, verify_jwt_in_request
-from flask_openapi3 import Info, OpenAPI
+from flask_jwt_extended import JWTManager, decode_token, unset_jwt_cookies
+from flask_jwt_extended.exceptions import JWTExtendedException
+from flask_openapi3.models.info import Info
+from flask_openapi3.openapi import OpenAPI
 
 from database.base import db
 from model.user import User
@@ -21,12 +23,63 @@ Bootstrap5(app)
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("SQLALCHEMY_DATABASE_URI")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = os.getenv("SQLALCHEMY_TRACK_MODIFICATIONS")
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
-app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
+app.config["JWT_TOKEN_LOCATION"] = ["headers", "cookies"]
 app.config["JWT_COOKIE_SECURE"] = False
 app.config["JWT_COOKIE_CSRF_PROTECT"] = False
 
 db.init_app(app)
 jwt = JWTManager(app)
+
+PUBLIC_PATH_PREFIXES = (
+    "/",
+    "/openapi",
+    "/docs",
+    "/login",
+    "/signup",
+    "/static",
+    "/bootstrap/static",
+)
+
+
+def is_api_request() -> bool:
+    return request.path.startswith("/api")
+
+
+def is_public_path() -> bool:
+    return any(request.path == prefix or request.path.startswith(prefix + "/") for prefix in PUBLIC_PATH_PREFIXES)
+
+
+def clear_auth_and_redirect(target: str):
+    response = make_response(redirect(target))
+    unset_jwt_cookies(response)
+    return response
+
+
+@jwt.expired_token_loader
+def handle_expired_token(_jwt_header, _jwt_payload):
+    if is_api_request():
+        return jsonify({"error": "Token has expired"}), 401
+    if is_public_path():
+        return clear_auth_and_redirect(request.path)
+    return clear_auth_and_redirect(url_for("web_auth.login_page"))
+
+
+@jwt.invalid_token_loader
+def handle_invalid_token(reason: str):
+    if is_api_request():
+        return jsonify({"error": "Invalid token", "details": reason}), 401
+    if is_public_path():
+        return clear_auth_and_redirect(request.path)
+    return clear_auth_and_redirect(url_for("web_auth.login_page"))
+
+
+@jwt.unauthorized_loader
+def handle_unauthorized(reason: str):
+    if is_api_request():
+        return jsonify({"error": "Missing or invalid token", "details": reason}), 401
+    if is_public_path():
+        return clear_auth_and_redirect(request.path)
+    return redirect(url_for("web_auth.login_page"))
 
 from routes.api.auth import auth_api_bp
 from routes.api.dashboards import dashboards_api_bp
@@ -49,10 +102,14 @@ app.register_blueprint(task_web_bp)
 
 @app.context_processor
 def inject_auth_state():
+    access_token = request.cookies.get("access_token_cookie")
+    if not access_token:
+        return {"is_authenticated": False}
+
     try:
-        verify_jwt_in_request(optional=True)
-        is_authenticated = get_jwt_identity() is not None
-    except Exception:
+        decode_token(access_token)
+        is_authenticated = True
+    except JWTExtendedException:
         is_authenticated = False
 
     return {"is_authenticated": is_authenticated}
@@ -85,3 +142,9 @@ def db_seed():
 @app.route("/")
 def home():
     return render_template("home/home.html")
+
+
+@app.route("/docs")
+@app.route("/openapi")
+def openapi_docs_shortcut():
+    return redirect("/openapi/swagger")
