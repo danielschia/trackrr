@@ -1,6 +1,8 @@
-from database.base import db
-from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.orm import relationship
+from werkzeug.security import check_password_hash, generate_password_hash
+
+from database.base import db
+
 
 class User(db.Model):
     __tablename__ = 'users'

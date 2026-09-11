@@ -1,10 +1,8 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
-from flask import request
 
-from model.dashboard import Dashboard
 from database.base import db
-
+from model.dashboard import Dashboard
 
 dashboard_web_bp = Blueprint("web_dashboard", __name__)
 

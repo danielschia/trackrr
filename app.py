@@ -1,16 +1,14 @@
-from flask_bootstrap import Bootstrap5
-from flask import Flask, render_template
-from flask_openapi3 import OpenAPI, Info
-from flask_jwt_extended import JWTManager, get_jwt_identity, verify_jwt_in_request
-from database.base import db
-from model.user import User
-from model.dashboard import Dashboard
-from model.list import List
-from model.task import Task
-from dotenv import load_dotenv
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+from flask import render_template
+from flask_bootstrap import Bootstrap5
+from flask_jwt_extended import JWTManager, get_jwt_identity, verify_jwt_in_request
+from flask_openapi3 import Info, OpenAPI
+
+from database.base import db
+from model.user import User
 
 load_dotenv(Path(__file__).resolve().parent / ".env")
 

@@ -1,6 +1,7 @@
-from database.base import db
-from sqlalchemy import Column, Integer, String, Text, ForeignKey
 from sqlalchemy.orm import relationship
+
+from database.base import db
+
 
 class List(db.Model):
     __tablename__ = 'lists'

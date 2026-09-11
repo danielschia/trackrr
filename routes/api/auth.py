@@ -1,7 +1,8 @@
-from flask import Blueprint, jsonify, request
-from flask_openapi3 import APIBlueprint, Info, Tag
-from pydantic import BaseModel, Field
+from flask import jsonify, request
 from flask_jwt_extended import create_access_token
+from flask_openapi3 import APIBlueprint, Tag
+from pydantic import BaseModel, Field
+
 from database.base import db
 from model.user import User
 

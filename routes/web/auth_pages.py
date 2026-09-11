@@ -1,9 +1,20 @@
-from flask import Blueprint, Response, make_response, redirect, render_template, request, url_for
-from flask_jwt_extended import create_access_token, set_access_cookies, unset_jwt_cookies
+from flask import (
+    Blueprint,
+    Response,
+    make_response,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
+from flask_jwt_extended import (
+    create_access_token,
+    set_access_cookies,
+    unset_jwt_cookies,
+)
 
 from database.base import db
 from model.user import User
-
 
 auth_web_bp = Blueprint("web_auth", __name__)
 

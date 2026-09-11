@@ -2,10 +2,9 @@ from flask import Blueprint, redirect, render_template, request, url_for
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from sqlalchemy import func
 
+from database.base import db
 from model.dashboard import Dashboard
 from model.list import List
-from database.base import db
-
 
 list_web_bp = Blueprint("web_list", __name__)
 
