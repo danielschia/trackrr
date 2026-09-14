@@ -29,3 +29,11 @@ class Dashboard(db.Model):
             'lists': [list.to_dict() for list in self.lists],
             'tasks': [task.to_dict() for task in self.tasks]
         }
+
+    def lightweight_dict(self) -> dict:
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'user_id': self.user_id
+        }

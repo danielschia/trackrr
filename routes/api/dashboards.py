@@ -3,9 +3,11 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_openapi3.blueprint import APIBlueprint
 from flask_openapi3.models.tag import Tag
 from pydantic import BaseModel, Field
+from sqlalchemy.orm import selectinload
 
 from database.base import db
 from model.dashboard import Dashboard
+from model.list import List
 
 dashboards_api_bp = APIBlueprint("dashboards_api", __name__)
 
@@ -37,18 +39,8 @@ class ErrorResponse(BaseModel):
 def list_dashboards():
     current_user_id = int(get_jwt_identity())
     dashboards = Dashboard.query.filter_by(user_id=current_user_id).all()
-    payload = {
-        "dashboards": [
-            {
-                "id": dashboard.id,
-                "name": dashboard.name,
-                "description": dashboard.description,
-                "user_id": dashboard.user_id,
-            }
-            for dashboard in dashboards
-        ]
-    }
-    return jsonify(payload), 200
+    
+    return jsonify([dashboard.lightweight_dict() for dashboard in dashboards]), 200
 
 
 @dashboards_api_bp.post("/dashboards", tags=[Tag(name="Dashboards", description="Operations related to dashboards")], responses={"400": ErrorResponse, "201": DashboardResponse})
@@ -81,7 +73,7 @@ def create_dashboard(body: CreateDashboardBody):
 @jwt_required()
 def dashboard_detail(path: DashboardPath):
     current_user_id = int(get_jwt_identity())
-    dashboard = Dashboard.query.filter_by(id=path.dashboard_id, user_id=current_user_id).first()
+    dashboard = Dashboard.query.options(selectinload(Dashboard.lists).selectinload(List.tasks)).filter_by(id=path.dashboard_id, user_id=current_user_id).first()
     if dashboard is None:
         return jsonify({"error": "Dashboard not found"}), 404
 

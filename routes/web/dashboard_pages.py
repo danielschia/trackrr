@@ -4,6 +4,7 @@ from sqlalchemy.orm import selectinload
 
 from database.base import db
 from model.dashboard import Dashboard
+from model.list import List
 
 dashboard_web_bp = Blueprint("web_dashboard", __name__)
 
@@ -53,7 +54,7 @@ def create_dashboard():
 @jwt_required()
 def dashboard_detail(dashboard_id):
     current_user_id = int(get_jwt_identity())
-    dashboard = Dashboard.query.options(selectinload(Dashboard.lists)).filter_by(id=dashboard_id, user_id=current_user_id).first()
+    dashboard = Dashboard.query.options(selectinload(Dashboard.lists).selectinload(List.tasks)).filter_by(id=dashboard_id, user_id=current_user_id).first()
 
     if dashboard is None or dashboard.user_id != current_user_id:
         return render_template("dashboards/detail.html", error="Dashboard not found"), 404

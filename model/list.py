@@ -34,3 +34,13 @@ class List(db.Model):
             'position': self.position,
             'tasks': [task.to_dict() for task in self.tasks]
         }
+
+    def lightweight_dict(self) -> dict:
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'user_id': self.user_id,
+            'dashboard_id': self.dashboard_id,
+            'position': self.position
+        }
